@@ -6,6 +6,10 @@ class TaskManagerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Task Manager App', home: SplashScreen());
+    return MaterialApp(
+      title: 'Task Manager App',
+      debugShowCheckedModeBanner: false,
+      home: SplashScreen(),
+    );
   }
 }
