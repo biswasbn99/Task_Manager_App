@@ -1,5 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:task_manager_app/screens/forget_password_email_verify.dart';
+import 'package:task_manager_app/screens/new_task_screen.dart';
 import 'package:task_manager_app/screens/sign_up_screen.dart';
 import 'package:task_manager_app/utils/app_color.dart';
 import 'package:task_manager_app/widgets/screen_background.dart';
@@ -31,7 +33,15 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 25),
               TextFormField(decoration: InputDecoration(hintText: 'Password')),
               SizedBox(height: 25),
-              FilledButton(onPressed: () {}, child: Text('Login')),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => NewTaskScreen()),
+                  );
+                },
+                child: Icon(Icons.arrow_circle_right_outlined),
+              ),
 
               SizedBox(height: 55),
 
@@ -39,7 +49,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ForgetPasswordEmailVerify(),
+                          ),
+                        );
+                      },
                       child: Text(
                         'Forget Password?',
                         style: TextStyle(color: Colors.grey),
@@ -50,12 +67,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         text: "Don't have an account? ",
                         style: TextStyle(
                           color: Colors.black,
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.bold,
                         ),
                         children: [
                           TextSpan(
                             text: 'Sign up',
-                            style: TextStyle(color: AppColor.Pcolor),
+                            style: TextStyle(
+                              color: AppColor.Pcolor,
+                              fontWeight: FontWeight.bold,
+                            ),
 
                             recognizer: TapGestureRecognizer()
                               ..onTap = () {

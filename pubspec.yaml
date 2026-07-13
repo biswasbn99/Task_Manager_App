@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   lottie: 
   flutter_svg:
+  pin_code_fields: ^8.0.1
 
 dev_dependencies:
   flutter_test:
