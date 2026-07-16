@@ -3,7 +3,7 @@ import 'package:task_manager_app/screens/cancel_task_screen.dart';
 import 'package:task_manager_app/screens/completed_task_screen.dart';
 import 'package:task_manager_app/screens/new_task_screen.dart';
 import 'package:task_manager_app/screens/progress_task_screen.dart';
-import 'package:task_manager_app/screens/task_manager_app_bar.dart';
+import 'package:task_manager_app/widgets/task_manager_appbar.dart';
 
 class MainNavScreen extends StatefulWidget {
   const MainNavScreen({super.key});
