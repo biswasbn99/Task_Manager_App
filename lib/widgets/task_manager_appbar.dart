@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:task_manager_app/controller/auth_controller.dart';
 import 'package:task_manager_app/screens/update_profile_screen.dart';
 import 'package:task_manager_app/utils/app_color.dart';
 
@@ -27,13 +28,13 @@ class TaskManagerAppBar extends StatelessWidget implements PreferredSize {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Byadhanath Biswas',
+                  '${AuthController.userData?.firstName ?? ''} ${AuthController.userData?.lastName ?? ''}',
                   style: Theme.of(
                     context,
                   ).textTheme.titleSmall!.copyWith(color: Colors.white),
                 ),
                 Text(
-                  'biswasbn99@gmail.com',
+                  AuthController.userData!.email.toString(),
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall!.copyWith(color: Colors.white),

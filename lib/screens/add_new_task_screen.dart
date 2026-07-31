@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_app/screens/main_nav_screen.dart';
 import 'package:task_manager_app/widgets/screen_background.dart';
 import 'package:task_manager_app/widgets/task_manager_appbar.dart';
 

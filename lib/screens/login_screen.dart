@@ -74,6 +74,7 @@ Future<void> _signIn()async{
                     ),
                   SizedBox(height: 25),
                   TextFormField(
+                    obscureText: true,
                     controller: _passwordController,
                     decoration: InputDecoration(hintText: 'Password'),
                     validator: (value){

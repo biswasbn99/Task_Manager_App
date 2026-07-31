@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_app/screens/task_manager_app_bar.dart';
+import 'package:task_manager_app/widgets/task_manager_appbar.dart';
 import 'package:task_manager_app/widgets/screen_background.dart';
 
 class UpdateProfileScreen extends StatefulWidget {
