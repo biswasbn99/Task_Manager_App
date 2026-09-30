@@ -1,8 +1,6 @@
 # 📝 Task Manager App
 
-<p align="center">
-  <img src="assets/images/profilePic.png" alt="Task Manager Logo" width="100" style="border-radius: 50%;" />
-</p>
+
 
 <h3 align="center">A Modern, Clean, and Feature-Rich Task Management Mobile Application</h3>
 
@@ -138,48 +136,6 @@ The application communicates with a live REST backend API, handling secure token
 ## 🏗️ Project Architecture
 
 The project adheres to a clean, decoupled **Layered / MVC-inspired** architecture pattern to ensure readability, scalability, and code reusability:
-
-```mermaid
-flowchart TD
-    subgraph UI ["Presentation Layer (Screens & Widgets)"]
-        SplashScreen["Splash Screen"]
-        LoginScreen["Login / Register / Forgot Password"]
-        MainNavScreen["Main Navigation & Tab Screens"]
-        Widgets["Custom Widgets (TaskCard, Appbar, ScreenBackground)"]
-    end
-
-    subgraph Controller ["Controller / State Layer"]
-        AuthController["AuthController\n(Static State & SharedPreferences)"]
-    end
-
-    subgraph Service ["Data & Network Layer"]
-        ApiCaller["ApiCaller\n(GET / POST with Logger)"]
-        Urls["Urls\n(API Endpoints Registry)"]
-    end
-
-    subgraph Models ["Data Models"]
-        UserModel["UserModel"]
-        TaskModel["TaskModel"]
-        TaskStatusCountModel["TaskStatusCountModel"]
-        ApiResponse["ApiResponse"]
-    end
-
-    subgraph Backend ["Remote REST API"]
-        API["https://task-manager-api.ostad.live/api/v1"]
-    end
-
-    SplashScreen --> AuthController
-    LoginScreen --> AuthController
-    LoginScreen --> ApiCaller
-    MainNavScreen --> ApiCaller
-    ApiCaller --> Urls
-    ApiCaller --> API
-    ApiCaller --> ApiResponse
-    ApiResponse --> UserModel
-    ApiResponse --> TaskModel
-    ApiResponse --> TaskStatusCountModel
-    AuthController --> UserModel
-```
 
 ### Architectural Breakdown:
 1. **Presentation Layer (`lib/screens/`, `lib/widgets/`)**:
