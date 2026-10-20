@@ -21,29 +21,34 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _inProgress = false;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    UserModel user = AuthController.userData!;
-
-    _emailController.text = user.email!;
-    _firstNameController.text = user.firstName!;
-    _lastNameController.text = user.lastName!;
-    _mobileController.text = user.mobile!;
+    UserModel? user = AuthController.userData;
+    if (user != null) {
+      _emailController.text = user.email ?? '';
+      _firstNameController.text = user.firstName ?? '';
+      _lastNameController.text = user.lastName ?? '';
+      _mobileController.text = user.mobile ?? '';
+    }
   }
 
   Future<void> updateProfile() async {
+    setState(() {
+      _inProgress = true;
+    });
+
     Map<String, dynamic> requestBody = {
-      "email": _emailController.text,
-      "firstName": _firstNameController,
-      "lastName": _lastNameController,
-      "mobile": _mobileController,
+      "email": _emailController.text.trim(),
+      "firstName": _firstNameController.text.trim(),
+      "lastName": _lastNameController.text.trim(),
+      "mobile": _mobileController.text.trim(),
     };
 
     if (_passwordController.text.isNotEmpty) {
-      requestBody['passsword'] = _passwordController.text;
+      requestBody['password'] = _passwordController.text;
     }
 
     final ApiResponse response = await ApiCaller.postRequest(
@@ -51,35 +56,60 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       body: requestBody,
     );
 
+    if (mounted) {
+      setState(() {
+        _inProgress = false;
+      });
+    }
+
     if (response.isSuccess) {
       UserModel model = UserModel(
         sId: AuthController.userData?.sId,
-        email: _emailController.text,
-        firstName: _firstNameController.text,
-        lastName: _lastNameController.text,
-        mobile: _mobileController.text,
+        email: _emailController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        mobile: _mobileController.text.trim(),
       );
 
-      AuthController.updateUserData(model);
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainNavScreen()),
-      );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Profile Updated Successfully')));
+      await AuthController.updateUserData(model);
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainNavScreen()),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile Updated Successfully')),
+        );
+      }
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.responseData['data'])));
+      final String errorMsg = response.errorMessage ??
+          response.responseData?['data']?.toString() ??
+          response.responseData?['message']?.toString() ??
+          'Profile update failed';
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _mobileController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TaskManagerAppBar(),
-
+      appBar: const TaskManagerAppBar(),
       body: ScreenBackground(
         child: SingleChildScrollView(
           child: Padding(
@@ -87,12 +117,12 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 150),
+                const SizedBox(height: 40),
                 Text(
                   'Update Profile',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                SizedBox(height: 25),
+                const SizedBox(height: 25),
                 Container(
                   height: 50,
                   width: double.infinity,
@@ -104,22 +134,22 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     children: [
                       Container(
                         alignment: Alignment.center,
-                        child: Text(
-                          'Photos',
-                          style: TextStyle(color: Colors.white),
-                        ),
                         height: 50,
                         width: 80,
                         decoration: BoxDecoration(
                           color: Colors.grey.shade700,
-                          borderRadius: BorderRadius.only(
+                          borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(10),
                             bottomLeft: Radius.circular(10),
                           ),
                         ),
+                        child: const Text(
+                          'Photos',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
-                      SizedBox(width: 10),
-                      Expanded(
+                      const SizedBox(width: 10),
+                      const Expanded(
                         child: Text(
                           'Upload Image',
                           style: TextStyle(
@@ -131,37 +161,45 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     ],
                   ),
                 ),
-                SizedBox(height: 25),
+                const SizedBox(height: 25),
                 TextFormField(
+                  enabled: false, // Email is typically read-only in profile update
                   controller: _emailController,
-                  decoration: InputDecoration(hintText: 'Email'),
+                  decoration: const InputDecoration(hintText: 'Email'),
                 ),
-                SizedBox(height: 25),
+                const SizedBox(height: 25),
                 TextFormField(
                   controller: _firstNameController,
-                  decoration: InputDecoration(hintText: 'First Name'),
+                  decoration: const InputDecoration(hintText: 'First Name'),
                 ),
-                SizedBox(height: 25),
+                const SizedBox(height: 25),
                 TextFormField(
                   controller: _lastNameController,
-                  decoration: InputDecoration(hintText: 'Last Name'),
+                  decoration: const InputDecoration(hintText: 'Last Name'),
                 ),
-                SizedBox(height: 25),
+                const SizedBox(height: 25),
                 TextFormField(
                   controller: _mobileController,
-                  decoration: InputDecoration(hintText: 'Mobile'),
+                  decoration: const InputDecoration(hintText: 'Mobile'),
                 ),
-                SizedBox(height: 25),
+                const SizedBox(height: 25),
                 TextFormField(
+                  obscureText: true,
                   controller: _passwordController,
-                  decoration: InputDecoration(hintText: 'Password'),
+                  decoration: const InputDecoration(hintText: 'Password (leave blank to keep current)'),
                 ),
-                SizedBox(height: 25),
-                FilledButton(
-                  onPressed: () {
-                    updateProfile();
-                  },
-                  child: Icon(Icons.arrow_circle_right_outlined),
+                const SizedBox(height: 25),
+                Visibility(
+                  visible: !_inProgress,
+                  replacement: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  child: FilledButton(
+                    onPressed: () {
+                      updateProfile();
+                    },
+                    child: const Icon(Icons.arrow_circle_right_outlined),
+                  ),
                 ),
               ],
             ),
