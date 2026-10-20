@@ -19,29 +19,67 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController=TextEditingController();
-  final TextEditingController _passwordController=TextEditingController();
-final GlobalKey<FormState> _formKey=GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool _inProgress = false;
 
-Future<void> _signIn()async{
-  Map<String,dynamic>requestBody={
-    "email":_emailController.text,
-    "password":_passwordController.text
-  };
+  Future<void> _signIn() async {
+    setState(() {
+      _inProgress = true;
+    });
 
-  final ApiResponse response=await ApiCaller.postRequest(URL: Urls.signInURL,body: requestBody);
+    Map<String, dynamic> requestBody = {
+      "email": _emailController.text.trim(),
+      "password": _passwordController.text
+    };
 
-  if(response.isSuccess){
-    UserModel model=UserModel.fromJson(response.responseDate['data']);
-    String accessToken=response.responseDate['token'];
-    
-    AuthController.saveUserData(model, accessToken);
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>MainNavScreen()));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sign In Success... ')));
-  }else{
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.responseDate['data'])));
+    final ApiResponse response = await ApiCaller.postRequest(
+      URL: Urls.signInURL,
+      body: requestBody,
+    );
+
+    if (mounted) {
+      setState(() {
+        _inProgress = false;
+      });
+    }
+
+    if (response.isSuccess) {
+      UserModel model = UserModel.fromJson(response.responseData['data']);
+      String accessToken = response.responseData['token'];
+
+      // Must await saving to SharedPreferences and static variables
+      await AuthController.saveUserData(model, accessToken);
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainNavScreen()),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sign In Success... ')),
+        );
+      }
+    } else {
+      final String errorMsg = response.errorMessage ??
+          response.responseData?['data']?.toString() ??
+          'Sign in failed. Please check credentials.';
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
+    }
   }
-}
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,52 +89,55 @@ Future<void> _signIn()async{
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Form(
-              key:_formKey,
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 150),
+                  const SizedBox(height: 150),
                   Text(
                     'Get Started With',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  SizedBox(height: 25),
+                  const SizedBox(height: 25),
                   TextFormField(
                     controller: _emailController,
-                    decoration: InputDecoration(hintText: 'Email'),
-                    validator:(value){
-                      if(value==null || value.isEmpty){
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(hintText: 'Email'),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Please Enter Email';
-                      }else{
-                        return null;
                       }
-                    } ,
-                    ),
-                  SizedBox(height: 25),
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 25),
                   TextFormField(
                     obscureText: true,
                     controller: _passwordController,
-                    decoration: InputDecoration(hintText: 'Password'),
-                    validator: (value){
-                      if(value==null || value.isEmpty){
+                    decoration: const InputDecoration(hintText: 'Password'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
                         return 'Please Enter Your Password';
-                      }else{
-                        return null;
                       }
+                      return null;
                     },
-                    ),
-                  SizedBox(height: 25),
-                  FilledButton(
-                    onPressed: () {
-                     if(_formKey.currentState!.validate()){
-                      _signIn();
-                     }
-                    },
-                    child: Icon(Icons.arrow_circle_right_outlined),
                   ),
-              
-                  SizedBox(height: 55),
-              
+                  const SizedBox(height: 25),
+                  Visibility(
+                    visible: !_inProgress,
+                    replacement: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                    child: FilledButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          _signIn();
+                        }
+                      },
+                      child: const Icon(Icons.arrow_circle_right_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 55),
                   Center(
                     child: Column(
                       children: [
@@ -105,11 +146,12 @@ Future<void> _signIn()async{
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ForgetPasswordEmailVerify(),
+                                builder: (context) =>
+                                    const ForgetPasswordEmailVerify(),
                               ),
                             );
                           },
-                          child: Text(
+                          child: const Text(
                             'Forget Password?',
                             style: TextStyle(color: Colors.grey),
                           ),
@@ -117,7 +159,7 @@ Future<void> _signIn()async{
                         RichText(
                           text: TextSpan(
                             text: "Don't have an account? ",
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.black,
                               fontWeight: FontWeight.bold,
                             ),
@@ -128,13 +170,13 @@ Future<void> _signIn()async{
                                   color: AppColor.Pcolor,
                                   fontWeight: FontWeight.bold,
                                 ),
-              
                                 recognizer: TapGestureRecognizer()
                                   ..onTap = () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => SignUpScreen(),
+                                        builder: (context) =>
+                                            const SignUpScreen(),
                                       ),
                                     );
                                   },

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_app/controller/auth_controller.dart';
+import 'package:task_manager_app/screens/login_screen.dart';
 import 'package:task_manager_app/screens/update_profile_screen.dart';
 import 'package:task_manager_app/utils/app_color.dart';
 
-class TaskManagerAppBar extends StatelessWidget implements PreferredSize {
+class TaskManagerAppBar extends StatelessWidget implements PreferredSizeWidget {
   const TaskManagerAppBar({super.key});
 
   @override
@@ -14,30 +15,32 @@ class TaskManagerAppBar extends StatelessWidget implements PreferredSize {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => UpdateProfileScreen()),
+            MaterialPageRoute(builder: (context) => const UpdateProfileScreen()),
           );
         },
         child: Row(
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 25,
               backgroundImage: AssetImage('assets/images/profilePic.png'),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   '${AuthController.userData?.firstName ?? ''} ${AuthController.userData?.lastName ?? ''}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall!.copyWith(color: Colors.white),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall!
+                      .copyWith(color: Colors.white),
                 ),
                 Text(
-                  AuthController.userData!.email.toString(),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall!.copyWith(color: Colors.white),
+                  AuthController.userData?.email ?? '',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall!
+                      .copyWith(color: Colors.white),
                 ),
               ],
             ),
@@ -46,18 +49,22 @@ class TaskManagerAppBar extends StatelessWidget implements PreferredSize {
       ),
       actions: [
         IconButton(
-          onPressed: () {},
-          icon: Icon(Icons.logout, color: Colors.white),
+          onPressed: () async {
+            await AuthController.clearUserData();
+            if (context.mounted) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (predicate) => false,
+              );
+            }
+          },
+          icon: const Icon(Icons.logout, color: Colors.white),
         ),
       ],
     );
   }
 
   @override
-  // TODO: implement child
-  Widget get child => throw UnimplementedError();
-
-  @override
-  // TODO: implement preferredSize
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

@@ -23,11 +23,14 @@ class TaskCountByStatus extends StatelessWidget {
        ]
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 10.0),
         child: Column(
           children: [
             Text(count.toString(), style: Theme.of(context).textTheme.titleLarge),
-            Text(title),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              
+              child: Text(title,style: TextStyle(fontSize: 12,fontWeight: FontWeight.w600))),
           ],
         ),
       ),

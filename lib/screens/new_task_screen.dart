@@ -16,102 +16,155 @@ class NewTaskScreen extends StatefulWidget {
 }
 
 class _NewTaskScreenState extends State<NewTaskScreen> {
-
-@override
-void initState(){
- // TODO: implement initState
+  @override
+  void initState() {
     super.initState();
     getAllTaskCount();
     getAllNewTask();
-}
-   
+  }
 
-  List<TaskStatusCountModel> taskCountByStatus=[];
-  List<TaskModel> newTask=[];
+  List<TaskStatusCountModel> taskCountByStatus = [];
+  List<TaskModel> newTask = [];
+  bool _inProgress = false;
 
-  Future <void> getAllTaskCount()async{
+  Future<void> getAllTaskCount() async {
+    final ApiResponse response =
+        await ApiCaller.getRequest(URL: Urls.getTaskCountURL);
 
-    final ApiResponse response=await ApiCaller.getRequest(URL: Urls.getTaskCountURL);
+    List<TaskStatusCountModel> taskCount = [];
 
-    List<TaskStatusCountModel> taskCount=[];
-
-    if(response.isSuccess){
-      for(Map<String,dynamic> jsonData in response.responseDate['data']){
+    if (response.isSuccess && response.responseData?['data'] != null) {
+      for (Map<String, dynamic> jsonData in response.responseData['data']) {
         taskCount.add(TaskStatusCountModel.fromJson(jsonData));
       }
-    }else{
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.responseDate['data'])));
+    } else {
+      final String errorMsg = response.errorMessage ??
+          response.responseData?['data']?.toString() ??
+          response.responseData?['message']?.toString() ??
+          'Failed to load task count';
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
     }
-    setState(() {
-      taskCountByStatus=taskCount;
-    });
+
+    if (mounted) {
+      setState(() {
+        taskCountByStatus = taskCount;
+      });
+    }
   }
 
+  Future<void> getAllNewTask() async {
+    setState(() {
+      _inProgress = true;
+    });
 
-  Future<void> getAllNewTask()async{
+    final ApiResponse response =
+        await ApiCaller.getRequest(URL: Urls.taskByStatusURL('New'));
 
-    final ApiResponse response=await ApiCaller.getRequest(URL: Urls.taskByStatusURL('New'));
+    List<TaskModel> task = [];
 
-    List<TaskModel> task=[];
-
-    if(response.isSuccess){
-      for(Map<String,dynamic>jsonData in response.responseDate['data']){
+    if (response.isSuccess && response.responseData?['data'] != null) {
+      for (Map<String, dynamic> jsonData in response.responseData['data']) {
         task.add(TaskModel.fromJson(jsonData));
       }
-    }else{
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.responseDate['data'])));
+    } else {
+      final String errorMsg = response.errorMessage ??
+          response.responseData?['data']?.toString() ??
+          response.responseData?['message']?.toString() ??
+          'Failed to load new tasks';
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
     }
-    setState(() {
-      newTask=task;
-    });
+
+    if (mounted) {
+      setState(() {
+        newTask = task;
+        _inProgress = false;
+      });
+    }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-              height: 90,
-              child: ListView.separated(
-                 itemCount: taskCountByStatus.length,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  return TaskCountByStatus(title: taskCountByStatus[index].sId.toString(),
-                   count: taskCountByStatus[index].sum!.toInt());
-                },
-                separatorBuilder: (context, index) {
-                  return SizedBox(width: 20);
-                },
-               
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await getAllTaskCount();
+          await getAllNewTask();
+        },
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                height: 90,
+                child: ListView.separated(
+                  itemCount: taskCountByStatus.length,
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (context, index) {
+                    return TaskCountByStatus(
+                      title: taskCountByStatus[index].sId?.toString() ?? '',
+                      count: taskCountByStatus[index].sum ?? 0,
+                    );
+                  },
+                  separatorBuilder: (context, index) {
+                    return const SizedBox(width: 20);
+                  },
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: newTask.length,
-              
-              itemBuilder: (context, index) {
-                return TaskCard(
-                  taskModel: newTask[index],
-                  cardColor: Colors.blue,
-                  refreshParent: () {},
-                );
-              },
+            Expanded(
+              child: Visibility(
+                visible: !_inProgress,
+                replacement: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+                child: newTask.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No new tasks found',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: newTask.length,
+                        itemBuilder: (context, index) {
+                          return TaskCard(
+                            taskModel: newTask[index],
+                            cardColor: Colors.blue,
+                            refreshParent: () {
+                              getAllTaskCount();
+                              getAllNewTask();
+                            },
+                          );
+                        },
+                      ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          // Listen for true return value to auto-reload
+          final bool? result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => AddNewTaskScreen()),
+            MaterialPageRoute(builder: (context) => const AddNewTaskScreen()),
           );
+          if (result == true) {
+            getAllTaskCount();
+            getAllNewTask();
+          }
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }

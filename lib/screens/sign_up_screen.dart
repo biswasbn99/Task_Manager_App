@@ -36,7 +36,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>LoginScreen()));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sign Up Success...')));
   }else{
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.responseDate['data'])));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.responseData['data'])));
   }
   }
   @override
