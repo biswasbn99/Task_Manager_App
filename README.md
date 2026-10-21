@@ -1,9 +1,5 @@
 # 📝 Task Manager App
 
-<p align="center">
-  <img src="assets/images/profilePic.png" alt="Task Manager App Logo" width="100" style="border-radius: 50%;" />
-</p>
-
 <h2 align="center">Enterprise-Grade Task & Productivity Management Mobile Application</h2>
 
 <p align="center">
