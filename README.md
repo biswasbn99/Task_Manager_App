@@ -1,4 +1,4 @@
-# 📝 Task Manager App
+<h1 align="center">📝 Task Manager App</h1>
 
 <h2 align="center">Enterprise-Grade Task & Productivity Management Mobile Application</h2>
 
