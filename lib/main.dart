@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:task_manager_app/app.dart';
+import 'package:provider/provider.dart';
+import 'package:task_manager_app/providers/login_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(TaskManagerApp());
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => LoginProvider()),
+    ],
+    child: TaskManagerApp(),
+  ));
 }

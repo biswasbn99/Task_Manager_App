@@ -1,14 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:task_manager_app/controller/auth_controller.dart';
-import 'package:task_manager_app/data/model/api_response.dart';
-import 'package:task_manager_app/data/model/user_model.dart';
-import 'package:task_manager_app/data/service/api_caller.dart';
+import 'package:task_manager_app/providers/login_provider.dart';
 import 'package:task_manager_app/screens/forget_password_email_verify.dart';
 import 'package:task_manager_app/screens/main_nav_screen.dart';
 import 'package:task_manager_app/screens/sign_up_screen.dart';
 import 'package:task_manager_app/utils/app_color.dart';
-import 'package:task_manager_app/utils/urls.dart';
+import 'package:provider/provider.dart';
 import 'package:task_manager_app/widgets/screen_background.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -22,58 +19,28 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  bool _inProgress = false;
 
-  Future<void> _signIn() async {
-    setState(() {
-      _inProgress = true;
-    });
+ Future<void> _onTapSignInButton() async {
+  if(_formKey.currentState!.validate()){
+    final loginProvider = context.read<LoginProvider>();
 
-    Map<String, dynamic> requestBody = {
-      "email": _emailController.text.trim(),
-      "password": _passwordController.text
-    };
-
-    final ApiResponse response = await ApiCaller.postRequest(
-      URL: Urls.signInURL,
-      body: requestBody,
+    final bool isSuccess = await loginProvider.signIn(
+      _emailController.text.trim(),
+      _passwordController.text,
     );
+    if(!mounted) return;
+    if(isSuccess){
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>const MainNavScreen()));
 
-    if (mounted) {
-      setState(() {
-        _inProgress = false;
-      });
-    }
 
-    if (response.isSuccess) {
-      UserModel model = UserModel.fromJson(response.responseData['data']);
-      String accessToken = response.responseData['token'];
-
-      // Must await saving to SharedPreferences and static variables
-      await AuthController.saveUserData(model, accessToken);
-
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainNavScreen()),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sign In Success... ')),
-        );
-      }
-    } else {
-      final String errorMsg = response.errorMessage ??
-          response.responseData?['data']?.toString() ??
-          'Sign in failed. Please check credentials.';
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sign In Success...')));
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(loginProvider.errorMessage?? 'Sign in failed')));
     }
   }
+ }
 
+ 
   @override
   void dispose() {
     _emailController.dispose();
@@ -123,19 +90,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 25),
-                  Visibility(
-                    visible: !_inProgress,
-                    replacement: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                    child: FilledButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          _signIn();
-                        }
-                      },
-                      child: const Icon(Icons.arrow_circle_right_outlined),
-                    ),
+                  Consumer<LoginProvider>(
+                    builder: (context,loginProvider,_) {
+                      return Visibility(
+                        visible: !loginProvider.isLoginInProgress,
+                        replacement: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        child: FilledButton(
+                          onPressed:_onTapSignInButton,
+                          
+                          child: const Icon(Icons.arrow_circle_right_outlined),
+                        ),
+                      );
+                    }
                   ),
                   const SizedBox(height: 55),
                   Center(
