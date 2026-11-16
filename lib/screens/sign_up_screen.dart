@@ -1,10 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:task_manager_app/data/model/api_response.dart';
-import 'package:task_manager_app/data/service/api_caller.dart';
+import 'package:provider/provider.dart';
+
+import 'package:task_manager_app/providers/signup_provider.dart';
 import 'package:task_manager_app/screens/login_screen.dart';
 import 'package:task_manager_app/utils/app_color.dart';
-import 'package:task_manager_app/utils/urls.dart';
+
 import 'package:task_manager_app/widgets/screen_background.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -15,30 +16,43 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final GlobalKey<FormState> _formKey=GlobalKey<FormState>();
-  final TextEditingController _emailController=TextEditingController();
-  final TextEditingController _firstNameController=TextEditingController();
-  final TextEditingController _lastNameController=TextEditingController();
-  final TextEditingController _mobileController=TextEditingController();
-  final TextEditingController _passwordController=TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _mobileController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-  Future<void> signUp()async{
-  Map<String,dynamic>requestBody={
-    "email":_emailController.text,
-    "firstName":_firstNameController.text,
-    "lastName":_lastNameController.text,
-    "mobile":_mobileController.text,
-      "password":_passwordController.text
-  };
-  final ApiResponse response=await ApiCaller.postRequest(URL: Urls.signUpURL,body: requestBody);
+  Future<void> _onTapSignUpButton() async {
+    if (_formKey.currentState!.validate()) {
+      final signUpProvider = context.read<SignUpProvider>();
+      final bool isSuccess = await signUpProvider.registerUser(
+        email: _emailController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        mobile: _mobileController.text.trim(),
+        password: _passwordController.text,
+      );
 
-  if(response.isSuccess){
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=>LoginScreen()));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sign Up Success...')));
-  }else{
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.responseData['data'])));
+      if (!mounted) return;
+      if (isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sign Up Success! Please Sign In')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(signUpProvider.errorMessage ?? 'Sign Up failed'),
+          ),
+        );
+      }
+    }
   }
-  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,74 +74,79 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   TextFormField(
                     controller: _emailController,
                     decoration: InputDecoration(hintText: 'Email'),
-                    validator:(value){
-                      if(value==null || value.isEmpty){
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
                         return 'Please Enter Email';
-                      }else{
+                      } else {
                         return null;
                       }
-                    } ,
-                    ),
+                    },
+                  ),
                   SizedBox(height: 25),
                   TextFormField(
                     controller: _firstNameController,
                     decoration: InputDecoration(hintText: 'FirstName'),
                     validator: (value) {
-                      if(value==null || value.isEmpty){
+                      if (value == null || value.isEmpty) {
                         return 'Please Enter First Name';
-                      }else{
+                      } else {
                         return null;
                       }
                     },
-                    ),
+                  ),
                   SizedBox(height: 25),
                   TextFormField(
                     controller: _lastNameController,
                     decoration: InputDecoration(hintText: 'LastName'),
                     validator: (value) {
-                      if(value==null || value.isEmpty){
+                      if (value == null || value.isEmpty) {
                         return 'Please Enter Your Last Name';
-                      }else{
+                      } else {
                         return null;
                       }
                     },
-                    ),
+                  ),
                   SizedBox(height: 25),
                   TextFormField(
                     controller: _mobileController,
                     decoration: InputDecoration(hintText: 'Mobile'),
                     validator: (value) {
-                      if(value==null || value.isEmpty){
-                       return 'Please Enter Mobile Number';
-                      }else{
+                      if (value == null || value.isEmpty) {
+                        return 'Please Enter Mobile Number';
+                      } else {
                         return null;
                       }
                     },
-                    ),
+                  ),
                   SizedBox(height: 25),
                   TextFormField(
                     obscureText: true,
-                    controller:_passwordController ,
+                    controller: _passwordController,
                     decoration: InputDecoration(hintText: 'Password'),
                     validator: (value) {
-                      if(value==null || value.isEmpty){
+                      if (value == null || value.isEmpty) {
                         return 'Please Enter Password';
-                      }else{
+                      } else {
                         return null;
                       }
                     },
-                    ),
-                  SizedBox(height: 25),
-                  FilledButton(
-                    onPressed: () {
-                      if(_formKey.currentState!.validate()){
-                        signUp();
-                      }
-                    },
-                    child: Icon(Icons.arrow_circle_right_outlined),
                   ),
-                  SizedBox(height: 55,),
-              
+                  SizedBox(height: 25),
+                  Consumer<SignUpProvider>(
+                    builder: (context, signUpProvider, _) {
+                      return Visibility(
+                        visible: !signUpProvider.isSignUpInProgress,
+                        replacement: Center(child: CircularProgressIndicator()),
+
+                        child: FilledButton(
+                          onPressed: _onTapSignUpButton,
+                          child: Icon(Icons.arrow_circle_right_outlined),
+                        ),
+                      );
+                    },
+                  ),
+                  SizedBox(height: 55),
+
                   Center(
                     child: RichText(
                       text: TextSpan(
