@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_app/data/model/api_response.dart';
+import 'package:provider/provider.dart';
 import 'package:task_manager_app/data/model/task_model.dart';
-import 'package:task_manager_app/data/service/api_caller.dart';
+import 'package:task_manager_app/providers/task_provider.dart';
 import 'package:task_manager_app/utils/app_color.dart';
-import 'package:task_manager_app/utils/urls.dart';
 
 class TaskCard extends StatefulWidget {
   final TaskModel taskModel;
@@ -22,48 +21,50 @@ class TaskCard extends StatefulWidget {
 
 class _TaskCardState extends State<TaskCard> {
   Future<void> changeStatus(String status) async {
-    final ApiResponse response = await ApiCaller.getRequest(
-      URL: Urls.taskStatusUpdateURL(widget.taskModel.id, status),
+    Navigator.pop(context);
+    final taskProvider = context.read<TaskProvider>();
+    final bool isSuccess = await taskProvider.updateTaskStatus(
+      taskId: widget.taskModel.id,
+      newStatus: status,
+      currentStatus: widget.taskModel.status,
     );
+    if (!mounted) return;
 
-    setState(() {});
-    if (response.isSuccess) {
+    if (isSuccess) {
       widget.refreshParent();
-      Navigator.pop(context);
-
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Task Status Updated')));
     } else {
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.responseData['data'])));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(taskProvider.errorMessage ?? 'Failed to update status'),
+        ),
+      );
     }
-
-    print(response.responseData);
   }
 
   Future<void> deleteTask() async {
-    final ApiResponse response = await ApiCaller.getRequest(
-      URL: Urls.taskDeleteURL(widget.taskModel.id),
+    final taskProvider = context.read<TaskProvider>();
+    final bool isSuccess = await taskProvider.deleteTask(
+      taskId: widget.taskModel.id,
+      currentStatus: widget.taskModel.status,
     );
 
-    setState(() {});
-    if (response.isSuccess) {
+    if (!mounted) return;
+    if (isSuccess) {
       widget.refreshParent();
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Task Deleted')));
     } else {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.responseData['data'])));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(taskProvider.errorMessage ?? 'Failed to delete task'),
+        ),
+      );
     }
-
-    print(response.responseData);
   }
 
   void showChangeStatusDialog() {
@@ -118,7 +119,9 @@ class _TaskCardState extends State<TaskCard> {
             ),
 
             Card(
-              color: widget.taskModel.status == 'Cancelled' ? Colors.green : null,
+              color: widget.taskModel.status == 'Cancelled'
+                  ? Colors.green
+                  : null,
               child: ListTile(
                 title: Text('Cancelled'),
                 onTap: () {

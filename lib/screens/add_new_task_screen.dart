@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:task_manager_app/data/model/api_response.dart';
-import 'package:task_manager_app/data/service/api_caller.dart';
-import 'package:task_manager_app/utils/urls.dart';
+import 'package:provider/provider.dart';
+import 'package:task_manager_app/providers/task_provider.dart';
 import 'package:task_manager_app/widgets/screen_background.dart';
 import 'package:task_manager_app/widgets/task_manager_appbar.dart';
 
@@ -14,48 +13,29 @@ class AddNewTaskScreen extends StatefulWidget {
 
 class _AddNewTaskScreenState extends State<AddNewTaskScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController titleController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-  bool _inProgress = false;
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
-  Future<void> addNewTask() async {
-    setState(() {
-      _inProgress = true;
-    });
+  Future<void> _onTapCreateTask() async {
+    if (_formKey.currentState!.validate()) {
+      final taskProvider = context.read<TaskProvider>();
+      final bool isSuccess = await taskProvider.createNewTask(
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+      );
 
-    Map<String, dynamic> requestBody = {
-      "title": titleController.text.trim(),
-      "description": descriptionController.text.trim(),
-      "status": "New"
-    };
+      if (!mounted) return;
 
-    final ApiResponse response = await ApiCaller.postRequest(
-      URL: Urls.createTaskURL,
-      body: requestBody,
-    );
-
-    if (mounted) {
-      setState(() {
-        _inProgress = false;
-      });
-    }
-
-    if (response.isSuccess) {
-      if (mounted) {
-        Navigator.pop(context, true); // Returns true to trigger auto-refresh on NewTaskScreen
+      if (isSuccess) {
+        Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('New Task Successfully Created')),
+          SnackBar(content: Text('New Task Successfully Created')),
         );
-      }
-    } else {
-      final String errorMsg = response.errorMessage ??
-          response.responseData?['data']?.toString() ??
-          response.responseData?['message']?.toString() ??
-          'Failed to create task';
-
-      if (mounted) {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg)),
+          SnackBar(
+            content: Text(taskProvider.errorMessage ?? 'Failed to create task'),
+          ),
         );
       }
     }
@@ -63,8 +43,8 @@ class _AddNewTaskScreenState extends State<AddNewTaskScreen> {
 
   @override
   void dispose() {
-    titleController.dispose();
-    descriptionController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -88,7 +68,7 @@ class _AddNewTaskScreenState extends State<AddNewTaskScreen> {
                   ),
                   const SizedBox(height: 25),
                   TextFormField(
-                    controller: titleController,
+                    controller: _titleController,
                     decoration: const InputDecoration(hintText: 'Title'),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -99,7 +79,7 @@ class _AddNewTaskScreenState extends State<AddNewTaskScreen> {
                   ),
                   const SizedBox(height: 25),
                   TextFormField(
-                    controller: descriptionController,
+                    controller: _descriptionController,
                     maxLines: 6,
                     decoration: const InputDecoration(hintText: 'Description'),
                     validator: (value) {
@@ -110,19 +90,19 @@ class _AddNewTaskScreenState extends State<AddNewTaskScreen> {
                     },
                   ),
                   const SizedBox(height: 25),
-                  Visibility(
-                    visible: !_inProgress,
-                    replacement: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                    child: FilledButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          addNewTask();
-                        }
-                      },
-                      child: const Icon(Icons.arrow_circle_right_outlined),
-                    ),
+                  Consumer<TaskProvider>(
+                    builder: (context, taskProvider, _) {
+                      return Visibility(
+                        visible: !taskProvider.isCreateTaskLoading,
+                        replacement: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        child: FilledButton(
+                          onPressed: _onTapCreateTask,
+                          child: const Icon(Icons.arrow_circle_right_outlined),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
